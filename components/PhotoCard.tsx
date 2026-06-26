@@ -173,6 +173,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   compactCard: {
-  marginBottom: 8,
-},
+    marginBottom: 8,
+  },
 });
