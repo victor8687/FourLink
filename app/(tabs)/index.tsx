@@ -1,14 +1,19 @@
-import React, { useMemo } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, Platform,
-  TouchableOpacity, ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { ConnectionMap } from "@/components/ConnectionMap";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useMemo } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function getDayCount(startDate?: string) {
   if (!startDate) return 0;
@@ -25,7 +30,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { people, photos, user, isLoaded, uniqueLocationCount } = useApp();
+  const { people, photos, user, isLoaded } = useApp();
 
   const peopleWithPhotos = useMemo(
     () => people.filter((p) => p.photoCount > 0),
@@ -142,14 +147,6 @@ export default function HomeScreen() {
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>일째</Text>
             </View>
           )}
-          {/* 장소 */}
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.statIcon, { backgroundColor: "#FFFBEB" }]}>
-              <Feather name="star" size={16} color="#F59E0B" />
-            </View>
-            <Text style={[styles.statNum, { color: colors.foreground }]}>{uniqueLocationCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>장소</Text>
-          </View>
         </View>
 
         {/* Two-column bottom */}
@@ -185,14 +182,7 @@ export default function HomeScreen() {
                       <Text style={[styles.recentDate, { color: colors.mutedForeground }]}>
                         {formatDate(photo.date)}
                       </Text>
-                      {photo.location ? (
-                        <Text
-                          style={[styles.recentLoc, { color: colors.foreground }]}
-                          numberOfLines={1}
-                        >
-                          {photo.location}
-                        </Text>
-                      ) : null}
+
                       <View style={styles.recentPeople}>
                         {tagged.slice(0, 2).map((p, i) =>
                           p ? (
@@ -371,7 +361,6 @@ const styles = StyleSheet.create({
   },
   recentInfo: { flex: 1, gap: 2 },
   recentDate: { fontSize: 9, fontFamily: "Poppins_400Regular" },
-  recentLoc: { fontSize: 11, fontFamily: "Poppins_500Medium" },
   recentPeople: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   miniAvatar: {
     width: 16,

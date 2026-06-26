@@ -81,17 +81,6 @@ export function PhotoCard({
             )}
           </View>
         )}
-        {photo.location ? (
-          <View style={styles.loc}>
-            <Feather name="map-pin" size={10} color={colors.mutedForeground} />
-            <Text style={[styles.locText, { color: colors.mutedForeground }]}>{photo.location}</Text>
-          </View>
-        ) : null}
-        {photo.memo ? (
-          <Text style={[styles.memo, { color: colors.foreground }]} numberOfLines={2}>
-            {photo.memo}
-          </Text>
-        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -155,15 +144,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_500Medium",
   },
   extra: {
-    fontSize: 11,
-    fontFamily: "Poppins_400Regular",
-  },
-  loc: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  locText: {
     fontSize: 11,
     fontFamily: "Poppins_400Regular",
   },

@@ -30,7 +30,6 @@ export default function UploadScreen() {
 
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [date, setDate] = useState(todayStr());
-  const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [newName, setNewName] = useState("");
@@ -76,7 +75,6 @@ export default function UploadScreen() {
   const reset = () => {
     setImageUri(null);
     setDate(todayStr());
-    setLocation("");
     setMemo("");
     setSelectedPeople([]);
     setNewName("");
@@ -92,7 +90,6 @@ export default function UploadScreen() {
       await addPhoto({
         uri: imageUri,
         date,
-        location: location.trim() || undefined,
         memo: memo.trim() || undefined,
         taggedPeople: selectedPeople,
       });
@@ -164,17 +161,6 @@ export default function UploadScreen() {
               value={date}
               onChangeText={setDate}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.mutedForeground}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.foreground }]}>장소</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
-              value={location}
-              onChangeText={setLocation}
-              placeholder="장소를 입력하세요 (선택)"
               placeholderTextColor={colors.mutedForeground}
             />
           </View>

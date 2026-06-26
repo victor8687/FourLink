@@ -115,15 +115,7 @@ export default function PhotoScreen() {
         </View>
 
         <View style={[styles.detailCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {photo.location && (
-            <View style={styles.detailRow}>
-              <Feather name="map-pin" size={14} color={colors.primary} />
-              <Text style={[styles.detailText, { color: colors.foreground }]}>
-                {photo.location}
-              </Text>
-            </View>
-          )}
-
+ 
           {taggedPeople.length > 0 && (
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>
@@ -198,8 +190,6 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14,
   },
-  detailRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  detailText: { fontSize: 14, fontFamily: "Poppins_400Regular" },
   detailSection: { gap: 8 },
   detailLabel: { fontSize: 11, fontFamily: "Poppins_500Medium" },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
