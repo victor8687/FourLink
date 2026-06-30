@@ -8,13 +8,14 @@ import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image, Platform,
+  FlatList,
+  Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 function todayStr() {
@@ -26,10 +27,10 @@ export default function UploadScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { people, addPhoto, addPerson } = useApp();
+  const { people, addPhotos, addPerson } = useApp();
 
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [date, setDate] = useState(todayStr());
+  const [imageUris, setImageUris] =
+    useState<string[]>([]); const [date, setDate] = useState(todayStr());
   const [memo, setMemo] = useState("");
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [newName, setNewName] = useState("");
@@ -46,10 +47,12 @@ export default function UploadScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: false,
+      allowsMultipleSelection: true,
+      selectionLimit: 0,
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      setImageUris(result.assets.map(asset => asset.uri));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, []);
@@ -73,7 +76,7 @@ export default function UploadScreen() {
   };
 
   const reset = () => {
-    setImageUri(null);
+    setImageUris([]);
     setDate(todayStr());
     setMemo("");
     setSelectedPeople([]);
@@ -81,18 +84,20 @@ export default function UploadScreen() {
   };
 
   const handleSave = async () => {
-    if (!imageUri) {
+    if (imageUris.length === 0) {
       Alert.alert("사진을 선택해주세요");
       return;
     }
     setSaving(true);
     try {
-      await addPhoto({
-        uri: imageUri,
-        date,
-        memo: memo.trim() || undefined,
-        taggedPeople: selectedPeople,
-      });
+      await addPhotos(
+        imageUris.map((uri) => ({
+          uri,
+          date,
+          memo: memo.trim() || undefined,
+          taggedPeople: selectedPeople,
+        }))
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       reset();
       router.push("/(tabs)/timeline" as any);
@@ -121,21 +126,42 @@ export default function UploadScreen() {
           style={[
             styles.imagePicker,
             {
-              backgroundColor: imageUri ? "transparent" : colors.card,
+              backgroundColor: imageUris.length ? "transparent" : colors.card,
               borderColor: colors.border,
             },
           ]}
           onPress={pickImage}
           activeOpacity={0.85}
         >
-          {imageUri ? (
+          {imageUris.length > 0 ? (
             <>
-              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="contain" />
+              <FlatList
+                data={imageUris}
+                keyExtractor={(item, index) => index.toString()}
+                numColumns={3}
+                scrollEnabled={false}
+                contentContainerStyle={styles.grid}
+                renderItem={({ item }) => (
+                  <Image
+                    source={{ uri: item }}
+                    style={styles.gridImage}
+                  />
+                )}
+              />
+
+              <Text style={styles.countText}>
+                선택한 사진 {imageUris.length}장
+              </Text>
+
               <TouchableOpacity
                 style={[styles.changeBtn, { backgroundColor: colors.primary }]}
                 onPress={pickImage}
               >
-                <Feather name="refresh-cw" size={14} color="white" />
+                <Feather
+                  name="refresh-cw"
+                  size={14}
+                  color="white"
+                />
               </TouchableOpacity>
             </>
           ) : (
@@ -154,75 +180,6 @@ export default function UploadScreen() {
         </TouchableOpacity>
 
         <View style={styles.form}>
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.foreground }]}>날짜</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
-              value={date}
-              onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.mutedForeground}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.foreground }]}>메모</Text>
-            <TextInput
-              style={[styles.input, styles.textarea, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
-              value={memo}
-              onChangeText={setMemo}
-              placeholder="이 날의 추억을 기록해보세요 (선택)"
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.foreground }]}>함께한 사람</Text>
-            {people.length > 0 && (
-              <View style={styles.chips}>
-                {people.map((p) => {
-                  const selected = selectedPeople.includes(p.id);
-                  return (
-                    <TouchableOpacity
-                      key={p.id}
-                      onPress={() => togglePerson(p.id)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: selected ? colors.primary : colors.card,
-                          borderColor: selected ? colors.primary : colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.chipText, { color: selected ? "white" : colors.foreground }]}>
-                        {p.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-            <View style={styles.addPerson}>
-              <TextInput
-                style={[styles.nameInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
-                value={newName}
-                onChangeText={setNewName}
-                placeholder="새 이름 추가"
-                placeholderTextColor={colors.mutedForeground}
-                onSubmitEditing={addNewPerson}
-                returnKeyType="done"
-              />
-              <TouchableOpacity
-                style={[styles.addBtn, { backgroundColor: colors.secondary }]}
-                onPress={addNewPerson}
-              >
-                <Feather name="plus" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
 
         <TouchableOpacity
@@ -250,7 +207,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontFamily: "Poppins_700Bold" },
   scroll: { paddingHorizontal: 20, paddingBottom: 110, gap: 18 },
   imagePicker: {
-    height: 220,
+    height: 260,
     borderRadius: 20,
     borderWidth: 1.5,
     overflow: "hidden",
@@ -331,4 +288,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Poppins_600SemiBold",
   },
+  grid: {
+  padding: 12,
+},
+
+gridImage: {
+  width: "31%",
+  aspectRatio: 1,
+  margin: "1%",
+  borderRadius: 10,
+},
+
+countText: {
+  textAlign: "center",
+  marginBottom: 12,
+  fontSize: 14,
+  fontFamily: "Poppins_500Medium",
+},
 });

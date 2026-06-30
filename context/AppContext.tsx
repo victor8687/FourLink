@@ -30,6 +30,7 @@ interface AppContextType {
   people: Person[];
   isLoaded: boolean;
   addPhoto: (photo: Omit<Photo, "id" | "createdAt">) => Promise<void>;
+  addPhotos: (photos: Omit<Photo, "id" | "createdAt">[]) => Promise<void>;
   deletePhoto: (id: string) => Promise<void>;
   addPerson: (name: string) => Person;
   updateUser: (update: Partial<UserProfile>) => Promise<void>;
@@ -107,6 +108,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ? { ...p, photoCount: p.photoCount + 1, lastPhotoDate: photoData.date }
             : p
         );
+        savePeople(updated);
+        return updated;
+      });
+    },
+    []
+  );
+
+  const addPhotos = useCallback(
+    async (photosData: Omit<Photo, "id" | "createdAt">[]) => {
+      const newPhotos: Photo[] = photosData.map((photo) => ({
+        ...photo,
+        id: genId(),
+        createdAt: new Date().toISOString(),
+      }));
+
+      setPhotos((prev) => {
+        const updated = [...newPhotos, ...prev];
+        savePhotos(updated);
+        return updated;
+      });
+
+      setPeople((prev) => {
+        const updated = [...prev];
+
+        newPhotos.forEach((photo) => {
+          photo.taggedPeople.forEach((personId) => {
+            const index = updated.findIndex((p) => p.id === personId);
+
+            if (index !== -1) {
+              updated[index] = {
+                ...updated[index],
+                photoCount: updated[index].photoCount + 1,
+                lastPhotoDate: photo.date,
+              };
+            }
+          });
+        });
+
         savePeople(updated);
         return updated;
       });
@@ -198,7 +237,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         user, photos, people, isLoaded,
-        addPhoto, deletePhoto, addPerson, updateUser,
+        addPhoto, addPhotos, deletePhoto, addPerson, updateUser,
         setCouple, unsetCouple, getPhotosForPerson, getPersonById,
       }}
     >
