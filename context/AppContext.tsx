@@ -13,9 +13,8 @@ export interface Person {
 export interface Photo {
   id: string;
   uri: string;
-  date: string;
-  memo?: string;
   taggedPeople: string[];
+  favorite?: boolean;
   createdAt: string;
 }
 
@@ -31,6 +30,7 @@ interface AppContextType {
   isLoaded: boolean;
   addPhoto: (photo: Omit<Photo, "id" | "createdAt">) => Promise<void>;
   addPhotos: (photos: Omit<Photo, "id" | "createdAt">[]) => Promise<void>;
+  updatePhoto: (id: string, update: Partial<Photo>) => Promise<void>;
   deletePhoto: (id: string) => Promise<void>;
   addPerson: (name: string) => Person;
   updateUser: (update: Partial<UserProfile>) => Promise<void>;
@@ -105,9 +105,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPeople((prev) => {
         const updated = prev.map((p) =>
           photoData.taggedPeople.includes(p.id)
-            ? { ...p, photoCount: p.photoCount + 1, lastPhotoDate: photoData.date }
+            ? {
+              ...p,
+              photoCount: p.photoCount + 1,
+              lastPhotoDate: new Date().toISOString(),
+            }
             : p
         );
+
         savePeople(updated);
         return updated;
       });
@@ -140,13 +145,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               updated[index] = {
                 ...updated[index],
                 photoCount: updated[index].photoCount + 1,
-                lastPhotoDate: photo.date,
+                lastPhotoDate: new Date().toISOString(),
               };
             }
           });
         });
 
         savePeople(updated);
+        return updated;
+      });
+    },
+    []
+  );
+
+  const updatePhoto = useCallback(
+    async (id: string, update: Partial<Photo>) => {
+      setPhotos((prev) => {
+        const updated = prev.map((photo) =>
+          photo.id === id
+            ? { ...photo, ...update }
+            : photo
+        );
+
+        savePhotos(updated);
         return updated;
       });
     },
@@ -166,8 +187,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             const count = updated.filter((p) => p.taggedPeople.includes(person.id)).length;
             const last = updated
               .filter((p) => p.taggedPeople.includes(person.id))
-              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-            return { ...person, photoCount: count, lastPhotoDate: last?.date };
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )[0];
+
+            return {
+              ...person,
+              photoCount: count,
+              lastPhotoDate: last?.createdAt,
+            };
           });
           savePeople(updatedPeople);
           return updatedPeople;
@@ -237,7 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         user, photos, people, isLoaded,
-        addPhoto, addPhotos, deletePhoto, addPerson, updateUser,
+        addPhoto, addPhotos, deletePhoto, addPerson, updatePhoto, updateUser,
         setCouple, unsetCouple, getPhotosForPerson, getPersonById,
       }}
     >

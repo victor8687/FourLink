@@ -12,23 +12,21 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
-}
 
 export default function PhotoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { photos, people, deletePhoto } = useApp();
+  const { photos, people, deletePhoto, updatePhoto } = useApp();
 
   const photo = photos.find((p) => p.id === id);
+  const [selectedPeople, setSelectedPeople] = React.useState<string[]>(
+    photo?.taggedPeople ?? []
+  );
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   if (!photo) {
@@ -67,14 +65,28 @@ export default function PhotoScreen() {
     ]);
   };
 
+  const handleSave = async () => {
+    if (!photo) return;
+
+    await updatePhoto(photo.id, {
+      taggedPeople: selectedPeople,
+    });
+
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
+
+    Alert.alert("저장되었습니다.");
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={[styles.headerDate, { color: colors.foreground }]}>
-          {formatDate(photo.date)}
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+          사진 정보
         </Text>
         <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
           <Feather name="trash-2" size={18} color={colors.destructive} />
@@ -90,7 +102,7 @@ export default function PhotoScreen() {
       >
         <View style={[styles.filmStrip, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.filmHoles, { backgroundColor: colors.background }]}>
-            {[0,1,2,3,4,5].map((i) => (
+            {[0, 1, 2, 3, 4, 5].map((i) => (
               <View key={i} style={[styles.hole, { backgroundColor: colors.muted }]} />
             ))}
           </View>
@@ -108,14 +120,14 @@ export default function PhotoScreen() {
             )}
           </View>
           <View style={[styles.filmHoles, { backgroundColor: colors.background }]}>
-            {[0,1,2,3,4,5].map((i) => (
+            {[0, 1, 2, 3, 4, 5].map((i) => (
               <View key={i} style={[styles.hole, { backgroundColor: colors.muted }]} />
             ))}
           </View>
         </View>
 
         <View style={[styles.detailCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
- 
+
           {taggedPeople.length > 0 && (
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>
@@ -134,17 +146,23 @@ export default function PhotoScreen() {
               </View>
             </View>
           )}
+          <TouchableOpacity
+            style={[
+              styles.saveBtn,
+              { backgroundColor: colors.primary },
+            ]}
+            onPress={handleSave}
+          >
+            <Feather
+              name="save"
+              size={18}
+              color="white"
+            />
 
-          {photo.memo && (
-            <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                메모
-              </Text>
-              <Text style={[styles.memoText, { color: colors.foreground }]}>
-                {photo.memo}
-              </Text>
-            </View>
-          )}
+            <Text style={styles.saveText}>
+              저장하기
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -160,7 +178,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  headerDate: { flex: 1, textAlign: "center", fontSize: 15, fontFamily: "Poppins_600SemiBold" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 15, fontFamily: "Poppins_600SemiBold" },
   deleteBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   scroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 16 },
   filmStrip: {
@@ -195,7 +213,20 @@ const styles = StyleSheet.create({
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   tagText: { fontSize: 13, fontFamily: "Poppins_500Medium" },
-  memoText: { fontSize: 14, lineHeight: 22, fontFamily: "Poppins_400Regular" },
   notFound: { flex: 1, alignItems: "center", justifyContent: "center" },
   notFoundText: { fontSize: 14, fontFamily: "Poppins_400Regular" },
+  saveBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+
+  saveText: {
+    color: "white",
+    fontSize: 15,
+    fontFamily: "Poppins_600SemiBold",
+  },
 });
