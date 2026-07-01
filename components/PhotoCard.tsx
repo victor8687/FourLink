@@ -67,7 +67,7 @@ export function PhotoCard({
 
       <View style={styles.meta}>
         <Text style={[styles.date, { color: colors.mutedForeground }]}>
-          {formatDate(photo.date)}
+          {formatDate(photo.createdAt)}
         </Text>
         {taggedPeople.length > 0 && (
           <View style={styles.tags}>

@@ -1,14 +1,18 @@
-import React from "react";
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Platform,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { PhotoCard } from "@/components/PhotoCard";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function getDayCount(startDate?: string) {
   if (!startDate) return 0;
@@ -26,7 +30,7 @@ export default function PersonScreen() {
   const person = getPersonById(id ?? "");
   const photos = getPhotosForPerson(id ?? "");
   const sorted = [...photos].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;

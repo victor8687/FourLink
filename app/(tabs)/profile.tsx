@@ -1,13 +1,19 @@
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Platform, Alert, Modal,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
+import {
+  Alert, Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "";
@@ -51,7 +57,7 @@ export default function ProfileScreen() {
   const monthlyStats = (() => {
     const map = new Map<string, number>();
     for (const p of photos) {
-      const d = new Date(p.date);
+      const d = new Date(p.createdAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       map.set(key, (map.get(key) ?? 0) + 1);
     }

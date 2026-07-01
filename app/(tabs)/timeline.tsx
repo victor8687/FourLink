@@ -24,7 +24,7 @@ export default function TimelineScreen() {
 
   const sortedPhotos = useMemo(() => {
     return [...photos].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [photos]);
 

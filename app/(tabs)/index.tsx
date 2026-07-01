@@ -42,8 +42,7 @@ export default function HomeScreen() {
   const recentPhotos = useMemo(
     () =>
       [...photos]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 3),
+.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())        .slice(0, 3),
     [photos]
   );
 
@@ -180,7 +179,7 @@ export default function HomeScreen() {
                     </View>
                     <View style={styles.recentInfo}>
                       <Text style={[styles.recentDate, { color: colors.mutedForeground }]}>
-                        {formatDate(photo.date)}
+                        {formatDate(photo.createdAt)}
                       </Text>
 
                       <View style={styles.recentPeople}>
