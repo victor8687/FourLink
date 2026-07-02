@@ -32,27 +32,38 @@ export default function HomeScreen() {
   const router = useRouter();
   const { people, photos, user, isLoaded } = useApp();
 
-  const peopleWithPhotos = useMemo(
-    () => people.filter((p) => p.photoCount > 0),
-    [people]
-  );
+  const peopleWithPhotos = useMemo(() => {
+    return people.filter((person) =>
+      photos.some((photo) =>
+        photo.taggedPeople.includes(person.id)
+      )
+    );
+  }, [people, photos]);
   const couple = people.find((p) => p.isCouple);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const recentPhotos = useMemo(
     () =>
       [...photos]
-.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())        .slice(0, 3),
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3),
     [photos]
   );
 
-  const topPeople = useMemo(
-    () =>
-      [...peopleWithPhotos]
-        .sort((a, b) => b.photoCount - a.photoCount)
-        .slice(0, 5),
-    [peopleWithPhotos]
-  );
+  const topPeople = useMemo(() => {
+    return [...peopleWithPhotos]
+      .sort((a, b) => {
+        const aCount = photos.filter(photo =>
+          photo.taggedPeople.includes(a.id)
+        ).length;
+
+        const bCount = photos.filter(photo =>
+          photo.taggedPeople.includes(b.id)
+        ).length;
+
+        return bCount - aCount;
+      })
+      .slice(0, 5);
+  }, [peopleWithPhotos, photos]);
 
   if (!isLoaded) {
     return (
@@ -99,6 +110,7 @@ export default function HomeScreen() {
         <View style={styles.mapWrap}>
           <ConnectionMap
             people={peopleWithPhotos}
+            photos={photos}
             userName={user.nickname}
             onPersonPress={(id) => router.push(`/person/${id}` as any)}
             onAddPress={() => router.push("/(tabs)/upload" as any)}
@@ -248,7 +260,11 @@ export default function HomeScreen() {
                     <Text style={{ color: "#F06292", fontSize: 10 }}>♥</Text>
                   )}
                   <Text style={[styles.topPersonCount, { color: colors.mutedForeground }]}>
-                    {person.photoCount}장
+                    {
+                      photos.filter(photo =>
+                        photo.taggedPeople.includes(person.id)
+                      ).length
+                    }장
                   </Text>
                 </TouchableOpacity>
               ))

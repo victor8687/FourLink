@@ -82,8 +82,13 @@ export default function PersonScreen() {
             </Text>
             <View style={styles.statsRow}>
               <View style={[styles.statChip, { backgroundColor: colors.secondary }]}>
-                <Text style={[styles.statNum, { color: colors.primary }]}>
-                  {person.photoCount}
+                <Text
+                  style={[
+                    styles.statNum,
+                    { color: colors.primary },
+                  ]}
+                >
+                  {photos.length}
                 </Text>
                 <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
                   장의 네컷

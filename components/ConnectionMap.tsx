@@ -1,20 +1,20 @@
+import { Person, Photo } from "@/context/AppContext";
+import { useColors } from "@/hooks/useColors";
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, {
   Circle,
-  Line,
   Defs,
-  RadialGradient,
-  LinearGradient,
-  Stop,
+  Line,
   Path,
-  Text as SvgText,
+  RadialGradient,
+  Stop,
+  Text as SvgText
 } from "react-native-svg";
-import { useColors } from "@/hooks/useColors";
-import { Person } from "@/context/AppContext";
 
 interface ConnectionMapProps {
   people: Person[];
+  photos: Photo[];
   userName: string;
   onPersonPress?: (id: string) => void;
   onAddPress?: () => void;
@@ -58,6 +58,7 @@ function Sparkle({
 
 export function ConnectionMap({
   people,
+  photos,
   userName,
   onPersonPress,
   onAddPress,
@@ -70,10 +71,19 @@ export function ConnectionMap({
   const cy = size / 2;
   const orbitR = size * 0.38;
 
-  const sorted = useMemo(
-    () => [...people].sort((a, b) => b.photoCount - a.photoCount),
-    [people]
-  );
+  const sorted = useMemo(() => {
+    return [...people].sort((a, b) => {
+      const aCount = photos.filter(photo =>
+        photo.taggedPeople.includes(a.id)
+      ).length;
+
+      const bCount = photos.filter(photo =>
+        photo.taggedPeople.includes(b.id)
+      ).length;
+
+      return bCount - aCount;
+    });
+  }, [people, photos]);
 
   const emptyCount = Math.max(0, Math.min(2, MAX_SLOTS - sorted.length));
 
@@ -119,17 +129,26 @@ export function ConnectionMap({
         <Sparkle x={cx - orbitR * 0.48} y={cy + 12} size={4} color="#FFA080" />
 
         {/* Lines to person nodes */}
-        {sorted.map((person, i) => (
-          <Line
-            key={`l-${person.id}`}
-            x1={cx} y1={cy}
-            x2={allPositions[i].x} y2={allPositions[i].y}
-            stroke="#FF8A65"
-            strokeWidth={1.5 + (person.photoCount / 20) * 2.5}
-            strokeOpacity={0.25 + (person.photoCount / 20) * 0.3}
-            strokeLinecap="round"
-          />
-        ))}
+        {sorted.map((person, i) => {
+
+          const photoCount = photos.filter(photo =>
+            photo.taggedPeople.includes(person.id)
+          ).length;
+
+          return (
+            <Line
+              key={`l-${person.id}`}
+              x1={cx}
+              y1={cy}
+              x2={allPositions[i].x}
+              y2={allPositions[i].y}
+              stroke="#FF8A65"
+              strokeWidth={1.5 + (photoCount / 20) * 2.5}
+              strokeOpacity={0.25 + (photoCount / 20) * 0.3}
+              strokeLinecap="round"
+            />
+          );
+        })}
 
         {/* Lines to empty slots */}
         {Array.from({ length: emptyCount }, (_, i) => {
@@ -244,8 +263,13 @@ export function ConnectionMap({
             {isCouple ? (
               <Text style={styles.badgeHeart}>♡</Text>
             ) : (
-              <Text style={styles.badgeText}>{person.photoCount}회</Text>
-            )}
+              <Text style={styles.badgeText}>
+                {
+                  photos.filter(photo =>
+                    photo.taggedPeople.includes(person.id)
+                  ).length
+                }회
+              </Text>)}
           </TouchableOpacity>
         );
       })}

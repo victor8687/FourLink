@@ -4,8 +4,6 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 export interface Person {
   id: string;
   name: string;
-  photoCount: number;
-  lastPhotoDate?: string;
   isCouple?: boolean;
   coupleStartDate?: string;
 }
@@ -102,20 +100,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         savePhotos(updated);
         return updated;
       });
-      setPeople((prev) => {
-        const updated = prev.map((p) =>
-          photoData.taggedPeople.includes(p.id)
-            ? {
-              ...p,
-              photoCount: p.photoCount + 1,
-              lastPhotoDate: new Date().toISOString(),
-            }
-            : p
-        );
-
-        savePeople(updated);
-        return updated;
-      });
     },
     []
   );
@@ -131,27 +115,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPhotos((prev) => {
         const updated = [...newPhotos, ...prev];
         savePhotos(updated);
-        return updated;
-      });
-
-      setPeople((prev) => {
-        const updated = [...prev];
-
-        newPhotos.forEach((photo) => {
-          photo.taggedPeople.forEach((personId) => {
-            const index = updated.findIndex((p) => p.id === personId);
-
-            if (index !== -1) {
-              updated[index] = {
-                ...updated[index],
-                photoCount: updated[index].photoCount + 1,
-                lastPhotoDate: new Date().toISOString(),
-              };
-            }
-          });
-        });
-
-        savePeople(updated);
         return updated;
       });
     },
@@ -181,27 +144,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!photo) return prevPhotos;
         const updated = prevPhotos.filter((p) => p.id !== id);
         savePhotos(updated);
-        setPeople((prevPeople) => {
-          const updatedPeople = prevPeople.map((person) => {
-            if (!photo.taggedPeople.includes(person.id)) return person;
-            const count = updated.filter((p) => p.taggedPeople.includes(person.id)).length;
-            const last = updated
-              .filter((p) => p.taggedPeople.includes(person.id))
-              .sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
-              )[0];
-
-            return {
-              ...person,
-              photoCount: count,
-              lastPhotoDate: last?.createdAt,
-            };
-          });
-          savePeople(updatedPeople);
-          return updatedPeople;
-        });
         return updated;
       });
     },
@@ -216,13 +158,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         result = existing;
         return prev;
       }
-      const newPerson: Person = { id: genId(), name, photoCount: 0 };
+      const newPerson: Person = { id: genId(), name};
       result = newPerson;
       const updated = [...prev, newPerson];
       savePeople(updated);
       return updated;
     });
-    return result ?? { id: genId(), name, photoCount: 0 };
+    return result ?? { id: genId(), name };
   }, []);
 
   const updateUser = useCallback(async (update: Partial<UserProfile>) => {

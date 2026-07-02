@@ -52,8 +52,17 @@ export default function ProfileScreen() {
   const couple = people.find((p) => p.isCouple);
   const totalPhotos = photos.length;
   const totalPeople = people.length;
-  const topPerson = [...people].sort((a, b) => b.photoCount - a.photoCount)[0];
+  const topPerson = [...people].sort((a, b) => {
+    const aCount = photos.filter(photo =>
+      photo.taggedPeople.includes(a.id)
+    ).length;
 
+    const bCount = photos.filter(photo =>
+      photo.taggedPeople.includes(b.id)
+    ).length;
+
+    return bCount - aCount;
+  })[0];
   const monthlyStats = (() => {
     const map = new Map<string, number>();
     for (const p of photos) {
@@ -151,17 +160,23 @@ export default function ProfileScreen() {
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>함께한 사람</Text>
             </View>
           </View>
-          {topPerson && topPerson.photoCount > 0 && (
-            <View style={[styles.topPersonRow, { backgroundColor: colors.secondary }]}>
+          {topPerson &&
+            photos.some(photo =>
+              photo.taggedPeople.includes(topPerson.id)
+            ) && (<View style={[styles.topPersonRow, { backgroundColor: colors.secondary }]}>
               <Feather name="star" size={14} color={colors.primary} />
               <Text style={[styles.topPersonText, { color: colors.foreground }]}>
                 가장 많이 찍은 사람
               </Text>
               <Text style={[styles.topPersonName, { color: colors.primary }]}>
-                {topPerson.name} ({topPerson.photoCount}장)
-              </Text>
+                {topPerson.name} (
+                {
+                  photos.filter(photo =>
+                    photo.taggedPeople.includes(topPerson.id)
+                  ).length
+                }장)              </Text>
             </View>
-          )}
+            )}
           {monthlyStats.length > 0 && (
             <View style={styles.monthlySection}>
               <Text style={[styles.monthlyTitle, { color: colors.mutedForeground }]}>
