@@ -1,6 +1,7 @@
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { Feather } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -21,21 +22,24 @@ function formatDate(dateStr?: string) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function getDayCount(startDate?: string) {
-  if (!startDate) return 0;
-  const diff = Date.now() - new Date(startDate).getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-}
+function getDayText(startDate?: string) {
+  if (!startDate) return "D-Day";
 
-function getCoupleMillestones(startDate?: string) {
-  if (!startDate) return [];
-  const start = new Date(startDate);
-  const milestones = [100, 200, 365, 500, 700, 1000];
-  return milestones.map((days) => {
-    const ms = new Date(start.getTime() + (days - 1) * 86400000);
-    const isPast = ms < new Date();
-    return { days, date: formatDate(ms.toISOString()), isPast };
-  });
+  const diff =
+    Math.floor(
+      (Date.now() - new Date(startDate).getTime()) /
+      (1000 * 60 * 60 * 24)
+    ) + 1;
+
+  if (diff > 0) {
+    return `D+${diff}`;
+  }
+
+  if (diff < 0) {
+    return `D${diff}`;
+  }
+
+  return "D-Day";
 }
 
 export default function ProfileScreen() {
@@ -46,8 +50,8 @@ export default function ProfileScreen() {
   const [editName, setEditName] = useState(false);
   const [nameInput, setNameInput] = useState(user.nickname);
   const [coupleModal, setCoupleModal] = useState(false);
-  const [coupleDate, setCoupleDate] = useState("");
-
+  const [coupleDate, setCoupleDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const couple = people.find((p) => p.isCouple);
   const totalPhotos = photos.length;
@@ -63,18 +67,6 @@ export default function ProfileScreen() {
 
     return bCount - aCount;
   })[0];
-  const monthlyStats = (() => {
-    const map = new Map<string, number>();
-    for (const p of photos) {
-      const d = new Date(p.createdAt);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return Array.from(map.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
-      .slice(0, 4);
-  })();
-
   const saveName = async () => {
     const trimmed = nameInput.trim();
     if (!trimmed) return;
@@ -84,10 +76,16 @@ export default function ProfileScreen() {
   };
 
   const handleSetCouple = async (personId: string) => {
-    const trimmed = coupleDate.trim() || new Date().toISOString().split("T")[0];
-    await setCouple(personId, trimmed);
+    await setCouple(
+      personId,
+      coupleDate.toISOString()
+    );
+
     setCoupleModal(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
   };
 
   const handleUnsetCouple = () => {
@@ -177,19 +175,6 @@ export default function ProfileScreen() {
                 }장)              </Text>
             </View>
             )}
-          {monthlyStats.length > 0 && (
-            <View style={styles.monthlySection}>
-              <Text style={[styles.monthlyTitle, { color: colors.mutedForeground }]}>
-                월별 기록
-              </Text>
-              {monthlyStats.map(([key, count]) => (
-                <View key={key} style={styles.monthlyRow}>
-                  <Text style={[styles.monthKey, { color: colors.foreground }]}>{key}</Text>
-                  <Text style={[styles.monthCount, { color: colors.primary }]}>{count}장</Text>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
 
         <View style={[styles.coupleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -204,32 +189,11 @@ export default function ProfileScreen() {
                   {couple.name}
                 </Text>
                 <Text style={[styles.coupleDay, { color: colors.foreground }]}>
-                  D+{getDayCount(couple.coupleStartDate)}
+                  {getDayText(couple.coupleStartDate)}
                 </Text>
                 <Text style={[styles.coupleDate, { color: colors.mutedForeground }]}>
                   {formatDate(couple.coupleStartDate)} 시작
                 </Text>
-              </View>
-              <View style={styles.milestones}>
-                {getCoupleMillestones(couple.coupleStartDate).map((m) => (
-                  <View
-                    key={m.days}
-                    style={[
-                      styles.milestone,
-                      {
-                        backgroundColor: m.isPast ? colors.primary : colors.muted,
-                        opacity: m.isPast ? 1 : 0.6,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.milestoneDay, { color: m.isPast ? "white" : colors.mutedForeground }]}>
-                      {m.days}일
-                    </Text>
-                    <Text style={[styles.milestoneDate, { color: m.isPast ? "rgba(255,255,255,0.8)" : colors.mutedForeground }]}>
-                      {m.date}
-                    </Text>
-                  </View>
-                ))}
               </View>
               <TouchableOpacity
                 style={[styles.outlineBtn, { borderColor: colors.border }]}
@@ -272,13 +236,40 @@ export default function ProfileScreen() {
             <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
               함께 시작한 날짜
             </Text>
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card }]}
-              value={coupleDate}
-              onChangeText={setCoupleDate}
-              placeholder={`예: ${new Date().toISOString().split("T")[0]}`}
-              placeholderTextColor={colors.mutedForeground}
-            />
+            <TouchableOpacity
+              style={[
+                styles.modalInput,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                },
+              ]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text
+                style={{
+                  color: colors.foreground,
+                  fontSize: 14,
+                }}
+              >
+                {coupleDate.toISOString().split("T")[0]}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={coupleDate}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+
+                  if (selectedDate) {
+                    setCoupleDate(selectedDate);
+                  }
+                }}
+              />
+            )}
             <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
               누구를 커플로 지정할까요?
             </Text>
@@ -389,16 +380,6 @@ const styles = StyleSheet.create({
   coupleName: { fontSize: 18, fontFamily: "Poppins_700Bold" },
   coupleDay: { fontSize: 28, fontFamily: "Poppins_700Bold" },
   coupleDate: { fontSize: 12, fontFamily: "Poppins_400Regular" },
-  milestones: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  milestone: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    alignItems: "center",
-    minWidth: 70,
-  },
-  milestoneDay: { fontSize: 12, fontFamily: "Poppins_700Bold" },
-  milestoneDate: { fontSize: 9, fontFamily: "Poppins_400Regular" },
   noCouple: { alignItems: "center", gap: 12 },
   noCoupleText: {
     fontSize: 13,
@@ -440,9 +421,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 14,
-    fontFamily: "Poppins_400Regular",
+    paddingVertical: 14,
+    justifyContent: "center",
   },
   personOption: {
     flexDirection: "row",

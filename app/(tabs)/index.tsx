@@ -92,7 +92,9 @@ export default function HomeScreen() {
             >
               <Feather name="heart" size={11} color="white" />
               <Text style={styles.couplePillText}>
-                내 D+{getDayCount(couple.coupleStartDate)}
+                {getDayCount(couple.coupleStartDate) >= 0
+                  ? `D+${getDayCount(couple.coupleStartDate)}`
+                  : `D${getDayCount(couple.coupleStartDate)}`}
               </Text>
             </TouchableOpacity>
           )}
@@ -145,7 +147,7 @@ export default function HomeScreen() {
                 <Feather name="heart" size={16} color="#F06292" />
               </View>
               <Text style={[styles.statNum, { color: colors.foreground }]}>
-                {getDayCount(couple.coupleStartDate)}
+                {Math.abs(getDayCount(couple.coupleStartDate))}
               </Text>
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>일째</Text>
             </TouchableOpacity>
